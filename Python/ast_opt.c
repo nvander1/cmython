@@ -691,6 +691,11 @@ astfold_stmt(stmt_ty node_, PyArena* ctx_)
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.While.body);
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.While.orelse);
         break;
+    case Until_kind:
+        CALL(astfold_expr, expr_ty, node_->v.Until.test);
+        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Until.body);
+        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Until.orelse);
+        break;
     case If_kind:
         CALL(astfold_expr, expr_ty, node_->v.If.test);
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.If.body);

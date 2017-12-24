@@ -1388,6 +1388,10 @@ find_ann(asdl_seq *stmts)
             res = find_ann(st->v.While.body) ||
                   find_ann(st->v.While.orelse);
             break;
+        case Until_kind:
+            res = find_ann(st->v.Until.body) ||
+                  find_ann(st->v.Until.orelse);
+            break;
         case If_kind:
             res = find_ann(st->v.If.body) ||
                   find_ann(st->v.If.orelse);
@@ -2414,6 +2418,60 @@ compiler_while(struct compiler *c, stmt_ty s)
 }
 
 static int
+compiler_until(struct compiler *c, stmt_ty s)
+{
+    basicblock *loop, *orelse, *end, *anchor = NULL;
+    int constant = expr_constant(c, s->v.Until.test);
+
+    if (constant == 1) {
+        if (s->v.Until.orelse)
+            VISIT_SEQ(c, stmt, s->v.Until.orelse);
+        return 1;
+    }
+    loop = compiler_new_block(c);
+    end = compiler_new_block(c);
+    if (constant == -1) {
+        anchor = compiler_new_block(c);
+        if (anchor == NULL)
+            return 0;
+    }
+    if (loop == NULL || end == NULL)
+        return 0;
+    if (s->v.Until.orelse) {
+        orelse = compiler_new_block(c);
+        if (orelse == NULL)
+            return 0;
+    }
+    else
+        orelse = NULL;
+
+    ADDOP_JREL(c, SETUP_LOOP, end);
+    compiler_use_next_block(c, loop);
+    if (!compiler_push_fblock(c, LOOP, loop))
+        return 0;
+    if (constant == -1) {
+        if (!compiler_jump_if(c, s->v.Until.test, anchor, 1))
+            return 0;
+    }
+    VISIT_SEQ(c, stmt, s->v.Until.body);
+    ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
+
+    /* XXX should the two POP instructions be in a separate block
+       if there is no else clause ?
+    */
+
+    if (constant == -1)
+        compiler_use_next_block(c, anchor);
+    ADDOP(c, POP_BLOCK);
+    compiler_pop_fblock(c, LOOP, loop);
+    if (orelse != NULL) /* what if orelse is just pass? */
+        VISIT_SEQ(c, stmt, s->v.Until.orelse);
+    compiler_use_next_block(c, end);
+
+    return 1;
+}
+
+static int
 compiler_continue(struct compiler *c)
 {
     static const char LOOP_ERROR_MSG[] = "'continue' not properly in loop";
@@ -2941,6 +2999,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_for(c, s);
     case While_kind:
         return compiler_while(c, s);
+    case Until_kind:
+        return compiler_until(c, s);
     case If_kind:
         return compiler_if(c, s);
     case Raise_kind:
