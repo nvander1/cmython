@@ -21,6 +21,42 @@ See the end of this file for further copyright and license information.
 
 .. contents::
 
+
+About This Fork
+---------------
+I intend to keep this fork a superset of Python, and will try to regularly
+pull recent changes from `Python`_.
+
+Since I want this to be a superset of Python, changes will likely be limited
+to feature additions. I think looking through rejected PEPs and the mailing
+list archives will yield lots of fun things to implement.
+
+
+To mark distributions of this fork created from ``setup.py`` as distinct,
+``Mython_`` is appended to the version number.
+
+.. _Python: https://github.com/python/cpython/
+.. _HackBU: http://club.hackbu.org
+
+
+Implemented Changes
+^^^^^^^^^^^^^^^^^^^
+
+I've added an ``until`` loop::
+
+    x = 10
+    until x == 0:
+        print(x)
+        x -= 1
+
+Which is semantically equivalent to a negated ``while`` loop::
+
+    x = 10
+    while not(x == 0):
+        print(x)
+        x -= 1
+
+
 General Information
 -------------------
 

@@ -2279,7 +2279,7 @@ def main():
     warnings.filterwarnings("ignore",category=DeprecationWarning)
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
-          version = sys.version.split()[0],
+          version = "Mython_" + sys.version.split()[0],
           url = "http://www.python.org/%d.%d" % sys.version_info[:2],
           maintainer = "Guido van Rossum and the Python community",
           maintainer_email = "python-dev@python.org",
