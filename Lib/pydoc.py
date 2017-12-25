@@ -1741,6 +1741,7 @@ class Helper:
         'raise': ('raise', 'EXCEPTIONS'),
         'return': ('return', 'FUNCTIONS'),
         'try': ('try', 'EXCEPTIONS'),
+        'until': ('until', 'break continue if TRUTHVALUE'),
         'while': ('while', 'break continue if TRUTHVALUE'),
         'with': ('with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
         'yield': ('yield', ''),

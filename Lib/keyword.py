@@ -46,6 +46,7 @@ kwlist = [
         'raise',
         'return',
         'try',
+        'until',
         'while',
         'with',
         'yield',
