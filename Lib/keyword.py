@@ -14,6 +14,7 @@ __all__ = ["iskeyword", "kwlist"]
 
 kwlist = [
 #--start keywords--
+        '$until',
         'False',
         'None',
         'True',

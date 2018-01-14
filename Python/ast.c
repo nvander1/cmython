@@ -428,6 +428,10 @@ validate_stmt(stmt_ty stmt)
         return validate_expr(stmt->v.While.test, Load) &&
             validate_body(stmt->v.While.body, "While", 0) &&
             validate_stmts(stmt->v.While.orelse);
+    case Until_kind:
+        return validate_expr(stmt->v.Until.test, Load) &&
+            validate_body(stmt->v.Until.body, "Until", 0) &&
+            validate_stmts(stmt->v.Until.orelse);
     case If_kind:
         return validate_expr(stmt->v.If.test, Load) &&
             validate_body(stmt->v.If.body, "If", 0) &&
@@ -3716,6 +3720,47 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
+ast_for_until_stmt(struct compiling *c, const node *n)
+{
+    /* while_stmt: '$until' test ':' suite ['else' ':' suite] */
+    REQ(n, until_stmt);
+
+    if (NCH(n) == 4) {
+        expr_ty expression;
+        asdl_seq *suite_seq;
+
+        expression = ast_for_expr(c, CHILD(n, 1));
+        if (!expression)
+            return NULL;
+        suite_seq = ast_for_suite(c, CHILD(n, 3));
+        if (!suite_seq)
+            return NULL;
+        return Until(expression, suite_seq, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+    }
+    else if (NCH(n) == 7) {
+        expr_ty expression;
+        asdl_seq *seq1, *seq2;
+
+        expression = ast_for_expr(c, CHILD(n, 1));
+        if (!expression)
+            return NULL;
+        seq1 = ast_for_suite(c, CHILD(n, 3));
+        if (!seq1)
+            return NULL;
+        seq2 = ast_for_suite(c, CHILD(n, 6));
+        if (!seq2)
+            return NULL;
+
+        return Until(expression, seq1, seq2, LINENO(n), n->n_col_offset, c->c_arena);
+    }
+
+    PyErr_Format(PyExc_SystemError,
+                 "wrong number of tokens for 'until' statement: %d",
+                 NCH(n));
+    return NULL;
+}
+
+static stmt_ty
 ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
 {
     asdl_seq *_target, *seq = NULL, *suite_seq;
@@ -4037,7 +4082,7 @@ ast_for_stmt(struct compiling *c, const node *n)
         }
     }
     else {
-        /* compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt
+        /* compound_stmt: if_stmt | while_stmt | until_stmt | for_stmt | try_stmt
                         | funcdef | classdef | decorated | async_stmt
         */
         node *ch = CHILD(n, 0);
@@ -4047,6 +4092,8 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_if_stmt(c, ch);
             case while_stmt:
                 return ast_for_while_stmt(c, ch);
+            case until_stmt:
+                return ast_for_until_stmt(c, ch);
             case for_stmt:
                 return ast_for_for_stmt(c, ch, 0);
             case try_stmt:

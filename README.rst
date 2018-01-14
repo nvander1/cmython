@@ -1,17 +1,7 @@
 This is Python version 3.7.0 alpha 4+
 =====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
-
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/master
-
-.. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
-   :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython
+Copyright 2017, 2018 Nikolas R Vanderhoof.
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
@@ -20,6 +10,47 @@ reserved.
 See the end of this file for further copyright and license information.
 
 .. contents::
+
+
+About This Fork
+---------------
+I intend to keep this fork a superset of Python, and will try to regularly
+pull recent changes from `Python`_.
+
+Since I want this to be a superset of Python, changes will likely be limited
+to feature additions. I think looking through rejected PEPs and the mailing
+list archives will yield lots of fun things to implement.
+
+
+To mark distributions of this fork created from ``setup.py`` as distinct,
+``Mython_`` is appended to the version number.
+
+.. _Python: https://github.com/python/cpython/
+.. _HackBU: http://club.hackbu.org
+
+
+Implemented Changes
+^^^^^^^^^^^^^^^^^^^
+
+To avoid upstream conflicts with new keywords, I prepend a dollar sign
+to each new keyword. Since Python does not support dollar signs in
+identifiers, this seems a reasonable way to avoid conflicts.
+Consequently, this means that any identifier in Mython can now begin with
+a dollar sign.
+
+I've added an ``$until`` loop::
+
+    x = 10
+    $until x == 0:
+        print(x)
+        x -= 1
+
+Which is semantically equivalent to a negated ``while`` loop::
+
+    x = 10
+    while not(x == 0):
+        print(x)
+        x -= 1
 
 General Information
 -------------------

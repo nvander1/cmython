@@ -1051,6 +1051,20 @@ class GrammarTests(unittest.TestCase):
             x = 2
         self.assertEqual(x, 2)
 
+    def test_until(self):
+        # '$until' test ':' suite ['else' ':' suite]
+        $until 1: pass
+        $until 1: pass
+        else: pass
+ 
+        x = 0
+        $until 1:
+            x = 1
+        else:
+            x = 2
+        self.assertEqual(x, 2)
+ 
+
     def test_for(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
         for i in 1, 2, 3: pass
