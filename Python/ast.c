@@ -3679,6 +3679,121 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
+ast_for_switch_stmt(struct compiling *c, const node *n)
+{
+    /*
+        switch_stmt: 'switch' expr ':' NEWLINE INDENT switch_body DEDENT
+        switch_body: 'else' ':' suite | (('case' expr ':' suite)+ ['else' ':' suite])
+    */
+    REQ(n, switch_stmt);
+
+    const node *body = CHILD(n, 5);
+
+    if (STR(CHILD(body, 0))[0] == 'e') {
+        expr_ty true_test = NameConstant(Py_True, LINENO(body),
+                body->n_col_offset, c->c_arena);
+        asdl_seq *suite_seq = ast_for_suite(c, CHILD(body, 2));
+        return If(true_test, suite_seq, NULL,
+            LINENO(CHILD(body, 0)), CHILD(body, 0)->n_col_offset, c->c_arena);
+    } else {
+        int i, n_elif, has_else = 0;
+        expr_ty expression;
+        expr_ty switch_expr = ast_for_expr(c, CHILD(n, 1));
+        asdl_int_seq *ops;
+        asdl_seq *cmps;
+        asdl_seq *suite_seq;
+        asdl_seq *orelse = NULL;
+        node *case_expr;
+
+        n_elif = NCH(body) - 4;
+        ops = _Py_asdl_int_seq_new(1, c->c_arena);
+        if (!ops)
+            return NULL;
+        asdl_seq_SET(ops, 0, Eq);
+
+
+        /* must reference the child n_elif+1 since 'else' token is third,
+           not fourth, child from the end. */
+        if (TYPE(CHILD(body, (n_elif + 1))) == NAME
+            && STR(CHILD(body, (n_elif + 1)))[0] == 'e') {
+            has_else = 1;
+            n_elif -= 3;
+        }
+        n_elif /= 4;
+
+        if (has_else) {
+            asdl_seq *suite_seq2;
+
+            orelse = _Py_asdl_seq_new(1, c->c_arena);
+            if (!orelse)
+                return NULL;
+            cmps = _Py_asdl_seq_new(1, c->c_arena);
+            if (!cmps)
+                return NULL;
+            case_expr = CHILD(body, NCH(body) - 6);
+            asdl_seq_SET(cmps, 0, ast_for_expr(c, case_expr));
+            expression = Compare(switch_expr, ops, cmps,
+                    LINENO(case_expr), case_expr->n_col_offset, c->c_arena);
+            if (!expression)
+                return NULL;
+            suite_seq = ast_for_suite(c, CHILD(body, NCH(body) - 4));
+            if (!suite_seq)
+                return NULL;
+            suite_seq2 = ast_for_suite(c, CHILD(body, NCH(body) - 1));
+            if (!suite_seq2)
+                return NULL;
+
+            asdl_seq_SET(orelse, 0,
+                         If(expression, suite_seq, suite_seq2,
+                            LINENO(case_expr),
+                            case_expr->n_col_offset,
+                            c->c_arena));
+            /* the just-created orelse handled the last elif */
+            n_elif--;
+        }
+
+        for (i = 0; i < n_elif; i++) {
+            int off = 5 + (n_elif - i - 1) * 4;
+            asdl_seq *newobj = _Py_asdl_seq_new(1, c->c_arena);
+            if (!newobj)
+                return NULL;
+            cmps = _Py_asdl_seq_new(1, c->c_arena);
+            if (!cmps)
+                return NULL;
+            case_expr = CHILD(body, off);
+            asdl_seq_SET(cmps, 0, ast_for_expr(c, case_expr));
+            expression = Compare(switch_expr, ops, cmps,
+                    LINENO(case_expr), case_expr->n_col_offset, c->c_arena);
+            if (!expression)
+                return NULL;
+            suite_seq = ast_for_suite(c, CHILD(body, off + 2));
+            if (!suite_seq)
+                return NULL;
+
+            asdl_seq_SET(newobj, 0,
+                         If(expression, suite_seq, orelse,
+                            LINENO(case_expr),
+                            case_expr->n_col_offset, c->c_arena));
+            orelse = newobj;
+        }
+        cmps = _Py_asdl_seq_new(1, c->c_arena);
+        if (!cmps)
+            return NULL;
+        case_expr = CHILD(body, 1);
+        asdl_seq_SET(cmps, 0, ast_for_expr(c, case_expr));
+        expression = Compare(switch_expr, ops, cmps,
+                LINENO(case_expr), case_expr->n_col_offset, c->c_arena);
+        if (!expression)
+            return NULL;
+        suite_seq = ast_for_suite(c, CHILD(body, 3));
+        if (!suite_seq)
+            return NULL;
+        return If(expression, suite_seq, orelse,
+                  LINENO(n), n->n_col_offset, c->c_arena);
+    }
+}
+
+static stmt_ty
 ast_for_while_stmt(struct compiling *c, const node *n)
 {
     /* while_stmt: 'while' test ':' suite ['else' ':' suite] */
@@ -4082,7 +4197,7 @@ ast_for_stmt(struct compiling *c, const node *n)
         }
     }
     else {
-        /* compound_stmt: if_stmt | while_stmt | until_stmt | for_stmt | try_stmt
+        /* compound_stmt: if_stmt | switch_stmt | while_stmt | until_stmt | for_stmt | try_stmt
                         | funcdef | classdef | decorated | async_stmt
         */
         node *ch = CHILD(n, 0);
@@ -4090,6 +4205,8 @@ ast_for_stmt(struct compiling *c, const node *n)
         switch (TYPE(ch)) {
             case if_stmt:
                 return ast_for_if_stmt(c, ch);
+            case switch_stmt:
+                return ast_for_switch_stmt(c, ch);
             case while_stmt:
                 return ast_for_while_stmt(c, ch);
             case until_stmt:

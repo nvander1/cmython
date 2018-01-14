@@ -52,6 +52,30 @@ Which is semantically equivalent to a negated ``while`` loop::
         print(x)
         x -= 1
 
+Inspired by `PEP 3103`_ I've added a ``$switch-$case`` construct::
+
+    x = 10
+
+    $switch x:
+        $case 10: pass
+        $case 5: pass
+        $case 8: pass
+        else: pass
+
+    $switch x:
+        else: pass
+
+    $switch x:
+        $case: pass
+        else: pass
+
+Internally, this is represented as an ``if-elif-else`` chain.
+I may potentially reimplement this as a dictionary-lookup as discussed in
+`PEP 3103`_.
+
+.. _PEP 3103: https://www.python.org/dev/peps/pep-3103/
+
+
 General Information
 -------------------
 

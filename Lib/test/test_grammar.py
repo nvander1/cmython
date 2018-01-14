@@ -1020,7 +1020,7 @@ class GrammarTests(unittest.TestCase):
             self.fail("AssertionError not raised by 'assert False'")
 
 
-    ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
+    ### compound_stmt: if_stmt | switch_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
     # Tested below
 
     def test_if(self):
@@ -1035,6 +1035,30 @@ class GrammarTests(unittest.TestCase):
         elif 0: pass
         elif 0: pass
         else: pass
+
+    def test_switch(self):
+        # switch_stmt: '$switch' expr ':' NEWLINE INDENT switch_body DEDENT
+        # switch_body: ('else' ':' suite) | (('$case' expr ':' suite)+ ['else' ':' suite])
+        x = None
+
+        $switch 5:
+            $case 89: pass
+            $case 5: x = 100
+            $case 63: pass
+        self.assertEqual(x, 100)
+
+        $switch 6:
+            $case 5: pass
+            $case 89: pass
+            $case 63: pass
+            $case 77: pass
+            $case 99: pass
+            else: x = 200
+        self.assertEqual(x, 200)
+
+        $switch 7:
+            else: x = 300
+        self.assertEqual(x, 300)
 
     def test_while(self):
         # 'while' test ':' suite ['else' ':' suite]
