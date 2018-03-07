@@ -312,7 +312,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     Py_INCREF(interp->import_func);
 
     /* Import the _imp module */
-    impmod = PyInit_imp();
+    impmod = PyInit__imp();
     if (impmod == NULL) {
         return _Py_INIT_ERR("can't import _imp");
     }
@@ -681,13 +681,14 @@ _Py_InitializeCore(const _PyCoreConfig *core_config)
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
     _PyEval_FiniThreads();
+
     /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
 
-    _Py_ReadyTypes();
+    /* Create the GIL */
+    PyEval_InitThreads();
 
-    if (!_PyFrame_Init())
-        return _Py_INIT_ERR("can't init frames");
+    _Py_ReadyTypes();
 
     if (!_PyLong_Init())
         return _Py_INIT_ERR("can't init longs");
